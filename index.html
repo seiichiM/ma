@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宛先コピー支援ツール v4</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f9f9f9; }
+        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; font-size: 1.5rem; color: #333; display: flex; justify-content: space-between; align-items: center; }
+        
+        label { display: block; margin-top: 1rem; font-weight: bold; font-size: 0.9rem; color: #555; }
+        select, input, textarea { width: 100%; padding: 0.8rem; margin-top: 0.3rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        
+        button { cursor: pointer; }
+        .btn-sm { font-size: 0.8rem; padding: 0.4rem 0.8rem; background: #eee; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-primary { background: #007bff; color: white; border: none; padding: 0.8rem 1rem; border-radius: 4px; width: 100%; margin-top: 1rem; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; }
+        .btn-edit { background: #ffc107; color: #333; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; margin-right: 0.5rem; }
+        .btn-file { background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; }
+
+        .copy-group { display: flex; gap: 0.5rem; align-items: flex-end; margin-bottom: 1rem; }
+        .copy-btn { 
+            padding: 0.8rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; white-space: nowrap; 
+        }
+
+        /* モーダル */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 8px; max-height: 80vh; overflow-y: auto; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        
+        /* リスト */
+        .group-list { list-style: none; padding: 0; margin-top: 1rem; border-top: 1px solid #eee; }
+        .group-item { padding: 0.8rem 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .group-info { flex-grow: 1; }
+        .group-name { font-weight: bold; display: block; }
+        .group-detail { font-size: 0.8rem; color: #666; }
+
+        .toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 200; left: 50%; bottom: 30px; transform: translateX(-50%); }
+        .toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        📨 宛先コピーくん v4
+        <button class="btn-sm" onclick="openManager()">⚙️ グループ管理</button>
+    </h1>
+    
+    <label>送信グループ選択</label>
+    <select id="groupSelect" onchange="loadGroup()">
+        <option value="">-- 選択してください --</option>
+    </select>
+
+    <div class="copy-group">
+        <div style="flex-grow: 1;">
+            <label>To (宛先)</label>
+            <input type="text" id="to">
+
+</div>
+        <button class="copy-btn" onclick="copyToClipboard('to')">コピー</button>
+    </div>
+
+    <div class="copy-group">
+        <div style="flex-grow: 1;">
+            <label>Cc</label>
+            <input type="text" id="cc">
+        </div>
+        <button class="copy-btn" onclick="copyToClipboard('cc')">コピー</button>
+    </div>
+</div>
+
+<!-- 管理モーダル -->
+<div id="managerModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeManager()">&times;</span>
+        <h2>⚙️ グループ管理</h2>
+        
+        <div style="background: #f0f0f0; padding: 1rem; border-radius: 4px;">
+            <h3 style="margin-top:0; font-size:1rem;">新規 / 編集</h3>
+            <input type="hidden" id="editKey">
+            <label>グループ名</label>
+            <input type="text" id="editLabel" placeholder="例: 開発チーム">
+            <label>To (カンマ区切り)</label>
+            <input type="text" id="editTo" placeholder="a@a.com, b@b.com">
+            <label>Cc</label>
+            <input type="text" id="editCc">
+            <button class="btn-primary" onclick="saveGroup()">保存する</button>
+            <button class="btn-sm" onclick="clearForm()" style="margin-top:0.5rem; width:100%;">クリア (新規作成)</button>
+        </div>
+
+        <h3 style="font-size:1rem; margin-top:1.5rem;">登録済みグループ</h3>
+        <ul id="groupList" class="group-list">
+            <!-- ここにリストが入る -->
+        </ul>
+        
+        <div style="margin-top:2rem; border-top:1px solid #ddd; padding-top:1rem;">
+            <label>設定ファイル操作</label>
+            <div style="display: flex; gap: 10px; margin-top: 0.5rem;">
+                <button class="btn-file" onclick="exportToFile()">💾 設定をファイルに保存</button>
+                <button class="btn-file" onclick="document.getElementById('fileInput').click()" style="background:#17a2b8;">📂 設定ファイルを読込</button>
+                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importFromFile(this)">
+            </div>
+            <p style="font-size:0.8rem; color:#666; margin-top:0.5rem;">※ 保存すると「mail_groups.json」がダウンロードされます。</p>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast">処理完了！</div>
+
+<script>
+    let GROUPS = {
+        'myself': { label: '自分のみ (mishuku@gmail.com)', to: 'mishuku@gmail.com', cc: '' }
+    };
+
+    window.onload = function() {
+        const saved = localStorage.getItem('mailGroups_v4');
+        if (saved) GROUPS = JSON.parse(saved);
+        updateUI();
+    };
+
+    function updateUI() {
+        const select = document.getElementById('groupSelect');
+        const list = document.getElementById('groupList');
+        const currentVal = select.value;
+
+        select.innerHTML = '<option value="">-- 選択してください --</option>';
+        list.innerHTML = '';
+
+        Object.keys(GROUPS).forEach(key => {
+            const g = GROUPS[key];
+            
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = g.label;
+            select.appendChild(option);
+
+            const li = document.createElement('li');
+            li.className = 'group-item';
+            li.innerHTML = `
+                <div class="group-info">
+                    <span class="group-name">${g.label}</span>
+                    <span class="group-detail">To: ${g.to.substring(0, 20)}${g.to.length>20?'...':''}</span>
+                </div>
+                <div>
+                    <button class="btn-edit" onclick="editGroup('${key}')">編集</button>
+                    <button class="btn-danger" onclick="deleteGroup('${key}')">削除</button>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+
+        select.value = currentVal;
+    }
+
+    function loadGroup() {
+        const key = document.getElementById('groupSelect').value;
+        if (!key) {
+            document.getElementById('to').value = '';
+            document.getElementById('cc').value = '';
+            return;
+        }
+        const data = GROUPS[key];
+document.getElementById('to').value = data.to;
+        document.getElementById('cc').value = data.cc;
+    }
+
+    function openManager() { document.getElementById('managerModal').style.display = 'block'; }
+    function closeManager() { document.getElementById('managerModal').style.display = 'none'; }
+    
+    function saveGroup() {
+        const key = document.getElementById('editKey').value || 'g_' + Date.now();
+        const label = document.getElementById('editLabel').value.trim();
+        const to = document.getElementById('editTo').value.trim();
+        const cc = document.getElementById('editCc').value.trim();
+
+        if (!label) return alert('グループ名は必須よ。');
+
+        GROUPS[key] = { label, to, cc };
+        localStorage.setItem('mailGroups_v4', JSON.stringify(GROUPS));
+        updateUI();
+        clearForm();
+        showToast('保存しました！');
+    }
+
+    function editGroup(key) {
+        const g = GROUPS[key];
+        document.getElementById('editKey').value = key;
+        document.getElementById('editLabel').value = g.label;
+        document.getElementById('editTo').value = g.to;
+        document.getElementById('editCc').value = g.cc;
+    }
+
+    function deleteGroup(key) {
+        if(confirm('本当に削除していいの？')) {
+            delete GROUPS[key];
+            localStorage.setItem('mailGroups_v4', JSON.stringify(GROUPS));
+            updateUI();
+            showToast('削除しました。');
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('editKey').value = '';
+        document.getElementById('editLabel').value = '';
+        document.getElementById('editTo').value = '';
+        document.getElementById('editCc').value = '';
+    }
+
+    // --- ファイル保存・読込 ---
+    function exportToFile() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(GROUPS, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "mail_groups.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importFromFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const json = JSON.parse(e.target.result);
+                if (confirm('現在の設定を上書きして読み込みますか？')) {
+                    GROUPS = json;
+                    localStorage.setItem('mailGroups_v4', JSON.stringify(GROUPS));
+                    updateUI();
+                    showToast('設定ファイルを読み込みました！');
+                }
+            } catch(err) {
+                alert('ファイル形式が正しくないみたい。');
+            }
+        };
+        reader.readAsText(file);
+        // 同じファイルを再度選べるようにリセット
+        input.value = '';
+    }
+
+    function copyToClipboard(id) {
+        const el = document.getElementById(id);
+        el.select();
+        navigator.clipboard.writeText(el.value).then(() => {
+            showToast('コピーしました！');
+        });
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = "toast show";
+        setTimeout(() => toast.className = toast.className.replace("show", ""), 3000);
+    }
+</script>
+</body>
+</html>
+
