@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Group Manager</title>
+    <title>メールグループ管理アプリ</title>
     <style>
-        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f6f9; color: #333; }
+        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f6f9; color: #333; }
         .container { background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         h1 { margin-top: 0; font-size: 1.4rem; color: #2c3e50; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1.5rem; }
         
         label { display: block; margin-top: 1.2rem; font-weight: 600; font-size: 0.9rem; color: #495057; margin-bottom: 0.3rem; }
-        select, input[type="text"] { width: 100%; padding: 0.7rem; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 1rem; transition: border-color 0.15s; }
-        select:focus, input:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+        select, input[type="text"], textarea { width: 100%; padding: 0.7rem; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 1rem; transition: border-color 0.15s; font-family: inherit; }
+        select:focus, input:focus, textarea:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+        
+        textarea { resize: vertical; min-height: 80px; line-height: 1.4; }
 
         button { cursor: pointer; transition: all 0.2s; font-family: inherit; }
         
@@ -34,21 +36,20 @@
         .btn-export { background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.3rem; }
         .btn-export:hover { background: #218838; }
 
-        .copy-group { display: flex; gap: 0.5rem; align-items: flex-end; margin-bottom: 1rem; }
+        .copy-group { display: flex; gap: 0.5rem; align-items: stretch; margin-bottom: 1rem; }
         .copy-btn { 
-            padding: 0.7rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; white-space: nowrap; font-weight: 600;
+            padding: 0 1.2rem; background: #6c757d; color: white; border: none; border-radius: 4px; white-space: nowrap; font-weight: 600; display: flex; align-items: center; justify-content: center;
         }
         .copy-btn:hover { background: #5a6268; }
 
         /* モーダル */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
-        .modal-content { background-color: #fff; margin: 4% auto; padding: 2rem; border: none; width: 90%; max-width: 550px; border-radius: 8px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-content { background-color: #fff; margin: 2% auto; padding: 1.5rem; border: none; width: 95%; max-width: 800px; border-radius: 8px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .close { color: #aaa; float: right; font-size: 24px; font-weight: bold; cursor: pointer; line-height: 1; }
         .close:hover { color: #333; }
         
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-
-.modal-title { margin: 0; font-size: 1.2rem; color: #333; }
+        .modal-title { margin: 0; font-size: 1.2rem; color: #333; }
 
         .form-section { background: #f8f9fa; padding: 1.5rem; border-radius: 6px; border: 1px solid #e9ecef; margin-bottom: 2rem; }
         
@@ -56,6 +57,7 @@
         .group-list { list-style: none; padding: 0; margin: 0; border: 1px solid #e9ecef; border-radius: 4px; }
         .group-item { padding: 1rem; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; background: white; }
         .group-item:last-child { border-bottom: none; }
+        .group-info { flex-grow: 1; margin-right: 1rem; }
         .group-name { font-weight: bold; color: #333; display: block; margin-bottom: 0.2rem; }
         .group-detail { font-size: 0.8rem; color: #6c757d; display: block; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -79,7 +81,7 @@
 
 <div class="container">
     <h1>
-        Email Group Manager
+        メールグループ管理アプリ
         <button class="btn-outline" onclick="openManager()">⚙️ 設定管理</button>
     </h1>
     
@@ -91,7 +93,7 @@
     <div class="copy-group">
         <div style="flex-grow: 1;">
             <label style="margin-top:0;">To (宛先)</label>
-            <input type="text" id="to" readonly placeholder="グループを選択すると表示されます">
+            <textarea id="to" readonly placeholder="グループを選択すると表示されます" rows="3"></textarea>
         </div>
         <button class="copy-btn" onclick="copyToClipboard('to')">コピー</button>
     </div>
@@ -99,9 +101,17 @@
     <div class="copy-group">
         <div style="flex-grow: 1;">
             <label style="margin-top:0;">Cc (同報)</label>
-            <input type="text" id="cc" readonly placeholder="グループを選択すると表示されます">
+            <textarea id="cc" readonly placeholder="グループを選択すると表示されます" rows="2"></textarea>
         </div>
         <button class="copy-btn" onclick="copyToClipboard('cc')">コピー</button>
+    </div>
+
+    <div class="copy-group">
+        <div style="flex-grow: 1;">
+            <label style="margin-top:0;">本文ヘッダー (書き出し)</label>
+            <textarea id="header" readonly placeholder="例: 〇〇様 お世話になっております。" rows="3"></textarea>
+        </div>
+        <button class="copy-btn" onclick="copyToClipboard('header')">コピー</button>
     </div>
 </div>
 
@@ -121,10 +131,13 @@
             <input type="text" id="editLabel" placeholder="例: 開発チーム定例">
             
             <label>To (宛先 - カンマ区切り)</label>
-            <input type="text" id="editTo" placeholder="例: user1@example.com, user2@example.com">
+            <textarea id="editTo" placeholder="例: user1@example.com, user2@example.com" rows="3"></textarea>
             
             <label>Cc (同報 - カンマ区切り)</label>
-            <input type="text" id="editCc" placeholder="例: manager@example.com">
+            <textarea id="editCc" placeholder="例: manager@example.com" rows="2"></textarea>
+            
+            <label>本文ヘッダー (書き出し)</label>
+            <textarea id="editHeader" placeholder="例: 〇〇株式会社 〇〇様&#13;&#10;いつもお世話になっております。" rows="3"></textarea>
             
             <div style="display:flex; gap:10px; align-items:flex-end;">
                 <button class="btn-primary" onclick="saveGroup()">保存する</button>
@@ -135,15 +148,17 @@
         <h3 style="font-size:1rem; margin-bottom:0.8rem; color:#495057;">登録済みグループ一覧</h3>
         <ul id="groupList" class="group-list">
             <!-- リスト生成エリア -->
-            <li class="group-item" style="justify-content:center; color:#999;">グループが登録されていません</li>
+            <li class="group-item" style="justify-content:center; color:#999;">読み込み中...</li>
         </ul>
         
         <div style="margin-top:2.5rem; border-top:1px solid #e9ecef; padding-top:1.5rem;">
             <label style="margin-top:0; margin-bottom:1rem;">設定データのバックアップ・復元</label>
-<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="btn-export" onclick="exportToFile()">💾 設定を保存 (Download)</button>
-                <button class="btn-file" onclick="document.getElementById('fileInput').click()">📂 設定を読込 (Upload)</button>
-                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importFromFile(this)">
+                <div style="position: relative; display: inline-block;">
+                    <button class="btn-file" onclick="document.getElementById('fileInput').click()">📂 設定を読込 (Upload)</button>
+                    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importFromFile(this)">
+                </div>
             </div>
             <p style="font-size:0.8rem; color:#888; margin-top:0.5rem; line-height:1.4;">
                 ※ 設定ファイル（JSON形式）をダウンロードしてバックアップできます。<br>
@@ -157,10 +172,7 @@
 
 <script>
     // デフォルト設定（初回のみ）
-    let GROUPS = {
-        'sample': { label: 'サンプルグループ', to: 'sample1@example.com, sample2@example.com', cc: 'manager@example.com' }
-    };
-
+    let GROUPS = {};
     const STORAGE_KEY = 'email_group_manager_v1';
 
     window.onload = function() {
@@ -170,7 +182,18 @@
                 GROUPS = JSON.parse(saved);
             } catch(e) {
                 console.error("設定データの読み込みに失敗しました", e);
+                // 読み込み失敗時は初期化せず、空の状態からスタート
             }
+        } else {
+             // 初回用サンプル
+             GROUPS = {
+                'sample': { 
+                    label: 'サンプルグループ', 
+                    to: 'sample1@example.com, sample2@example.com', 
+                    cc: 'manager@example.com',
+                    header: '〇〇様\nお世話になっております。'
+                }
+            };
         }
         updateUI();
     };
@@ -181,6 +204,7 @@
         const currentVal = select.value;
 
         // プルダウン更新
+        // 現在のオプションをクリア
         select.innerHTML = '<option value="">-- グループを選択してください --</option>';
         list.innerHTML = '';
 
@@ -216,26 +240,31 @@
         }
 
         // 選択状態の維持（存在する場合のみ）
-        if (GROUPS[currentVal]) {
+        if (currentVal && GROUPS[currentVal]) {
             select.value = currentVal;
         } else {
-            loadGroup(); // リセット
+            select.value = "";
         }
+        // 内容をロード
+        loadGroup(); 
     }
 
     function loadGroup() {
         const key = document.getElementById('groupSelect').value;
         const toInput = document.getElementById('to');
         const ccInput = document.getElementById('cc');
+        const headerInput = document.getElementById('header');
 
         if (!key || !GROUPS[key]) {
             toInput.value = '';
             ccInput.value = '';
+            headerInput.value = '';
             return;
         }
         const data = GROUPS[key];
-        toInput.value = data.to;
-        ccInput.value = data.cc;
+        toInput.value = data.to || '';
+        ccInput.value = data.cc || '';
+        headerInput.value = data.header || '';
     }
 
     // --- 管理機能 ---
@@ -251,48 +280,72 @@
     }
 
     function saveGroup() {
-        const key = document.getElementById('editKey').value || 'g_' + Date.now();
-
-const label = document.getElementById('editLabel').value.trim();
+        const keyField = document.getElementById('editKey');
+        let key = keyField.value;
+        
+        const label = document.getElementById('editLabel').value.trim();
         const to = document.getElementById('editTo').value.trim();
         const cc = document.getElementById('editCc').value.trim();
+        const header = document.getElementById('editHeader').value.trim(); // 追加
 
         if (!label) {
             alert('グループ名は必須です。');
             return;
         }
 
-        GROUPS[key] = { label, to, cc };
+        if (!key) {
+             key = 'g_' + Date.now();
+        }
+
+        GROUPS[key] = { label, to, cc, header };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(GROUPS));
         
         updateUI();
+        
+        // 編集中のものを再選択
+        document.getElementById('groupSelect').value = key;
+        loadGroup();
+
         clearForm();
         showToast('設定を保存しました');
         
-        // 新規作成時はスクロールを一番下へ（簡易）
-        if (!document.getElementById('editKey').value) {
-            const list = document.getElementById('groupList');
-            list.scrollTop = list.scrollHeight;
+        // 新規作成時などはスクロール
+        if (!keyField.value) {
+            // リストの最後にスクロールしたいが、DOM更新後なので少し待つか、
+            // 簡易的にリスト要素を取得してscrollTop設定
+            // const list = document.getElementById('groupList');
+            // list.scrollTop = list.scrollHeight;
         }
     }
 
     function editGroup(key) {
         const g = GROUPS[key];
+        if(!g) return;
+
         document.getElementById('editKey').value = key;
         document.getElementById('editLabel').value = g.label;
-        document.getElementById('editTo').value = g.to;
-        document.getElementById('editCc').value = g.cc;
+        document.getElementById('editTo').value = g.to || '';
+        document.getElementById('editCc').value = g.cc || '';
+        document.getElementById('editHeader').value = g.header || '';
         
         // フォームへスクロール
-        document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+        const section = document.querySelector('.form-section');
+        if(section) section.scrollIntoView({ behavior: 'smooth' });
     }
 
     function deleteGroup(key) {
         if(confirm('このグループを削除してもよろしいですか？')) {
             delete GROUPS[key];
             localStorage.setItem(STORAGE_KEY, JSON.stringify(GROUPS));
+            
+            // 現在選択中のものが削除されたらリセット
+            const currentSelect = document.getElementById('groupSelect').value;
+            if(currentSelect === key) {
+                document.getElementById('groupSelect').value = "";
+            }
+
             updateUI();
-            clearForm(); // 編集中だった場合のリセット
+            clearForm();
             showToast('グループを削除しました');
         }
     }
@@ -302,6 +355,7 @@ const label = document.getElementById('editLabel').value.trim();
         document.getElementById('editLabel').value = '';
         document.getElementById('editTo').value = '';
         document.getElementById('editCc').value = '';
+        document.getElementById('editHeader').value = '';
     }
 
     // --- ファイル保存・読込 ---
@@ -323,7 +377,6 @@ const label = document.getElementById('editLabel').value.trim();
         reader.onload = function(e) {
             try {
                 const json = JSON.parse(e.target.result);
-                // 簡易バリデーション
                 if (typeof json !== 'object') throw new Error();
 
                 if (confirm('現在の設定を上書きして読み込みますか？\n（現在の設定は失われます）')) {
@@ -344,19 +397,31 @@ const label = document.getElementById('editLabel').value.trim();
     // --- ユーティリティ ---
     function copyToClipboard(id) {
         const el = document.getElementById(id);
-        if(!el.value) return;
+        if(!el) return;
+        
+        // 値が空の場合はコピーしない
+        const val = el.value;
+        if(!val) {
+            // showToast('空のためコピーしませんでした');
+            return;
+        }
         
         el.select();
-        // モバイル対応
-        el.setSelectionRange(0, 99999); 
+        el.setSelectionRange(0, 99999); // for mobile
         
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(el.value).then(() => {
-                showToast('クリップボードにコピーしました');
+        // クリップボードAPIを優先
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(val).then(() => {
+                showToast('コピーしました');
+            }).catch(err => {
+                // 失敗時はexecCommandへフォールバック
+                console.error(err);
+                document.execCommand('copy');
+                showToast('コピーしました');
             });
         } else {
             document.execCommand('copy');
-            showToast('クリップボードにコピーしました');
+            showToast('コピーしました');
         }
     }
 
@@ -364,13 +429,15 @@ const label = document.getElementById('editLabel').value.trim();
         const toast = document.getElementById("toast");
         toast.textContent = message;
         toast.className = "toast show";
-        setTimeout(() => toast.className = toast.className.replace("show", ""), 3000);
+        setTimeout(() => {
+            // クラスを削除して非表示に
+            toast.className = toast.className.replace("show", "");
+        }, 3000);
     }
     
     function escapeHtml(str) {
         if(!str) return '';
-
-return str.replace(/[&<>"']/g, function(m) {
+        return str.replace(/[&<>"']/g, function(m) {
             return {
                 '&': '&amp;',
                 '<': '&lt;',
