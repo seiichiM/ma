@@ -1,6 +1,6 @@
 {
-  "name": "MA",
-  "short_name": "MA",
+  "name": "ma",
+  "short_name": "ma",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
