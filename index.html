@@ -85,10 +85,15 @@
         <button class="btn-outline" onclick="openManager()">⚙️ 設定管理</button>
     </h1>
     
-    <label>宛先グループ選択</label>
-    <select id="groupSelect" onchange="loadGroup()">
-        <option value="">-- グループを選択してください --</option>
-    </select>
+    <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+        <div style="flex-grow: 1;">
+            <label>宛先グループ選択</label>
+            <select id="groupSelect" onchange="loadGroup()">
+                <option value="">-- グループを選択してください --</option>
+            </select>
+        </div>
+        <button class="copy-btn" onclick="copyGroupName()" style="height: 42px; margin-bottom: 1px;">グループ名をコピー</button>
+    </div>
 
     <div class="copy-group">
         <div style="flex-grow: 1;">
@@ -265,6 +270,32 @@
         toInput.value = data.to || '';
         ccInput.value = data.cc || '';
         headerInput.value = data.header || '';
+    }
+
+    function copyGroupName() {
+        const select = document.getElementById('groupSelect');
+        const selectedIndex = select.selectedIndex;
+        if (selectedIndex < 0 || !select.value) {
+            // showToast('グループが選択されていません');
+            return;
+        }
+        
+        const groupName = select.options[selectedIndex].text;
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(groupName).then(() => {
+                showToast('グループ名をコピーしました');
+            });
+        } else {
+            // Fallback (hidden textarea)
+            const ta = document.createElement('textarea');
+            ta.value = groupName;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('グループ名をコピーしました');
+        }
     }
 
     // --- 管理機能 ---
